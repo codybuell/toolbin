@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #
-# Letsrenew
+# LetsRenew
 #
 # Wrapper to automate renewal of Let's Encrypt certificates on AWS EC2
 # instances.  Letsrenew will temporarily open up the attached Security Group,
@@ -36,14 +36,14 @@
 #                      }
 #                  ]
 #              }
-#           - /etc/logrotate.d/letsrenew (optional)
-#             /var/log/letsrenew.log {
-#               rotate 2
-#               missingok
-#               notifempty
-#               monthly
-#             }
-#           - set domian, pre_command, and post_command in config section
+#            - /etc/logrotate.d/letsrenew (optional)
+#              /var/log/letsrenew.log {
+#                rotate 2
+#                missingok
+#                notifempty
+#                monthly
+#              }
+#            - set domain, pre_command, and post_command in config section
 #
 # Resources: 
 #
