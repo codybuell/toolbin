@@ -186,7 +186,7 @@ def remove_rule_from_security_group(ec2: 'boto3 ec2 client', security_group: str
 ################################################################################
 
 if __name__ == "__main__":
-    _, _, seconds_left = ssl_expiration(sys.argv[1])
+    _, _, seconds_left = ssl_expiration(domain)
     # if we are under our threshold for time remaining on cert run our renewal
     if seconds_left < threshold:
         # execute the pre-command
@@ -210,8 +210,8 @@ if __name__ == "__main__":
 
         # perform certificate renewal for the domain
         out = run_cmd(f"""
-            certbot -d {domain} --standalone certonly
-            #certbot-auto -d {domain} --standalone certonly
+            certbot -n -d {domain} --standalone certonly
+            #certbot-auto -n -d {domain} --standalone certonly
         """
 
         # delete out the temoprary security group rule using the tag to identify
