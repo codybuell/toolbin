@@ -45,7 +45,7 @@
 #              }
 #            - set domain, pre_command, and post_command in config section
 #
-# Resources: 
+# Resources:
 #
 # Usage: python3 letsrenew.py
 #        0 1 * * * /usr/local/bin/letsrenew.py > /var/log/letsrenew 2>&1
@@ -82,7 +82,7 @@ post_command = """
   """
 
 # tempoary security group rule for domain ownership verification
-temp_rule=[
+temp_rule = [
         {
             'FromPort': 80,
             'ToPort': 80,
@@ -109,6 +109,7 @@ l.basicConfig(
 ##                                                                            ##
 ################################################################################
 
+
 def request(method_type: str, url: str, headers: dict, *args: dict) -> requests.Response:
     """Run a POST or GET request"""
     method_type = method_type.lower()
@@ -122,11 +123,13 @@ def request(method_type: str, url: str, headers: dict, *args: dict) -> requests.
     except requests.RequestException as e:
         sys.exit(e)
 
+
 def run_cmd(cmd: str) -> str:
     """Run command against the OS"""
     l.debug('Running command: {}'.format(cmd))
     out = (os.popen(cmd).read())
     return out.rstrip()
+
 
 def ssl_expiration(hostname: str) -> (dt.datetime, dt.datetime, int):
     """Get the datetime of a certificates expiration."""
@@ -135,7 +138,7 @@ def ssl_expiration(hostname: str) -> (dt.datetime, dt.datetime, int):
 
     # configure our socket
     context = ssl.create_default_context()
-    conn    = context.wrap_socket(
+    conn = context.wrap_socket(
         socket.socket(socket.AF_INET),
         server_hostname=hostname,
     )
@@ -152,11 +155,12 @@ def ssl_expiration(hostname: str) -> (dt.datetime, dt.datetime, int):
     conn.close()
 
     # parse the expiration into some dates and measures
-    expiration  = dt.datetime.strptime(ssl_info['notAfter'], ssl_date_fmt)
-    remaining   = expiration - dt.datetime.utcnow()
+    expiration = dt.datetime.strptime(ssl_info['notAfter'], ssl_date_fmt)
+    remaining = expiration - dt.datetime.utcnow()
     seconds_rem = int(remaining.total_seconds())
 
     return expiration, remaining, seconds_rem
+
 
 def get_security_group_by_name(ec2: 'boto3 ec2 client', name: str) -> 'sg id':
     """Get the id of a SecurityGroup from the name."""
@@ -166,17 +170,19 @@ def get_security_group_by_name(ec2: 'boto3 ec2 client', name: str) -> 'sg id':
                 dict(Name='group-name', Values=[name])
                 ]
             )
-    
+
     return resp['SecurityGroups'][0]['GroupId']
+
 
 def add_rule_to_security_group(ec2: 'boto3 ec2 client', security_group: str):
     """Add temp rule to the specified SecurityGroup."""
-    sg  = ec2.SecurityGroup(security_group)
+    sg = ec2.SecurityGroup(security_group)
     sg.authorize_ingress(DryRun=False, IpPermissions=temp_rule)
+
 
 def remove_rule_from_security_group(ec2: 'boto3 ec2 client', security_group: str):
     """Remove temp rule from the specified SecurityGroup."""
-    sg  = ec2.SecurityGroup(security_group)
+    sg = ec2.SecurityGroup(security_group)
     sg.revoke_ingress(DryRun=False, IpPermissions=temp_rule)
 
 ################################################################################
@@ -184,6 +190,7 @@ def remove_rule_from_security_group(ec2: 'boto3 ec2 client', security_group: str
 ##  Run                                                                       ##
 ##                                                                            ##
 ################################################################################
+
 
 if __name__ == "__main__":
     _, _, seconds_left = ssl_expiration(domain)
@@ -195,24 +202,26 @@ if __name__ == "__main__":
         print(out)
 
         # get the region of the ec2 instance we are running on
-        resp = request('get', 'http://169.254.169.254/latest/dynamic/instance-identity/document', {}, {})
+        resp = request(
+            'get', 'http://169.254.169.254/latest/dynamic/instance-identity/document', {}, {})
         region = resp.json()['region']
 
         # initialialize boto3
         ec2 = boto3.client('ec2')
 
         # get the security groups attached to this node
-        resp = request('get', 'http://169.254.169.254/latest/meta-data/security-groups', {}, {})
+        resp = request(
+            'get', 'http://169.254.169.254/latest/meta-data/security-groups', {}, {})
         security_group = get_security_group_by_name(ec2, resp.text)
 
         # temporarily open up the security group port 80 to the world, tag rule to easily identify
         add_rule_to_security_group(ec2, security_group)
 
         # perform certificate renewal for the domain
-        out = run_cmd(f"""
+        out = run_cmd(f"""\
             certbot -n -d {domain} --standalone certonly
-            #certbot-auto -n -d {domain} --standalone certonly
-        """
+            # certbot-auto -n -d {domain} --standalone certonly
+            """
 
         # delete out the temoprary security group rule using the tag to identify
         remove_rule_from_security_group(ec2, security_group)
@@ -221,5 +230,5 @@ if __name__ == "__main__":
 
         # execute the post command
         print('Running post-command')
-        out = run_cmd(pre_command)
+        out=run_cmd(pre_command)
         print(out)
